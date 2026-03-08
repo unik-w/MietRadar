@@ -66,6 +66,13 @@ pip install -r requirements.txt
 4. **Manual Blacklist**:
    If there is an ad you hate, copy the end of its URL (e.g., `/wg-zimmer-in-Muenchen.12345.html`) and paste it into `config/manual_blacklist.txt`.
 
+### 4. First Run & CAPTCHAs 🧩
+When you run the bot for the first time, WG-Gesucht will likely present a **CAPTCHA**.
+- The bot is configured to detect this and will **pause** execution.
+- A Chrome window will remain open. You must **manually solve the CAPTCHA** in that window.
+- Once solved, the bot will automatically detect the page change and continue its work.
+- Subsequent runs should be smoother as session cookies are saved in `data/wgbot_profile/`.
+
 ## Running the Bot
 
 Run the bot directly from the root directory:

@@ -112,7 +112,6 @@ def solve_captcha_if_present(driver):
     print("  ⚠️  CAPTCHA wait timed out — continuing anyway.")
 
 
-
 def create_driver():
     """
     Create a stealth Chrome instance using selenium + webdriver-manager.
@@ -180,13 +179,6 @@ def extract_poster_name(driver, listing_url):
     slug = listing_url.lstrip("/")
     nachricht_url = f"https://www.wg-gesucht.de/nachricht-senden/{slug}"
 
-    # Words that appear in WG-Gesucht navigation/headings but are NOT names
-    NOT_A_NAME = {
-        'seite', 'anmelden', 'registrieren', 'suche', 'anzeige', 'wg',
-        'zimmer', 'wohnung', 'nachricht', 'senden', 'kontakt', 'login',
-        'startseite', 'home', 'back', 'weiter', 'menu', 'mehr', 'alle',
-        'zur', 'von', 'nach', 'für', 'dem', 'der', 'die', 'das', 'profil',
-    }
 
     # Strategy 1: Nachricht-senden page — name in <b> inside Mitglied seit card
     # Exact HTML structure (from debug):
@@ -221,7 +213,7 @@ def extract_poster_name(driver, listing_url):
                     else:
                         text = words[0]
                         
-                    if len(text) >= 3 and text[0].isupper() and text.replace(" ", "").replace("-", "").replace(".", "").isalpha() and text.lower() not in NOT_A_NAME:
+                    if len(text) >= 3 and text[0].isupper() and text.replace(" ", "").replace("-", "").replace(".", "").isalpha():
                         found_name = text
                         break
                 if found_name:
@@ -235,38 +227,6 @@ def extract_poster_name(driver, listing_url):
 
     except Exception as e:
         print(f"  \u26a0 Nachricht page error: {e}")
-
-    # Strategy 2: regex on listing description (temporarily disabled for testing)
-    # try:
-    #     driver.get("https://www.wg-gesucht.de" + listing_url)
-    #     random_sleep(2, 3)
-    #     solve_captcha_if_present(driver)
-    #
-    #     desc = wait_for(driver, By.ID, "ad_description_text")
-    #     if desc:
-    #         text = desc.text
-    #         patterns = [
-    #             r'(?:ich bin|mein Name ist|ich heiße)\s+([A-ZÄÖÜ][a-zäöüß]+)',
-    #             r'mit mir,?\s+([A-ZÄÖÜ][a-zäöüß]+)',
-    #             r'bin\s+([A-ZÄÖÜ][a-zäöüß]+)\s*[,\.!\)]',
-    #             r'(?:LG|VG|Liebe Grüße|Viele Grüße|Grüße|Best),?\s+([A-ZÄÖÜ][a-zäöüß]+)',
-    #             r'Ich,?\s+([A-ZÄÖÜ][a-zäöüß]+),',
-    #             r'Mitbewohner(?:in)?\s+([A-ZÄÖÜ][a-zäöüß]+)',
-    #         ]
-    #         false_positives = {
-    #             'Hallo', 'Sehr', 'Bitte', 'Danke', 'Gerne', 'Liebe',
-    #             'Suche', 'Biete', 'Zimmer', 'Wohnung', 'Haus', 'Freue',
-    #             'Guten', 'Hier', 'Diese', 'Mein', 'Dein', 'Willkommen',
-    #         }
-    #         for pattern in patterns:
-    #             m = re.search(pattern, text, re.IGNORECASE)
-    #             if m:
-    #                 name = m.group(1).strip()
-    #                 if name not in false_positives and len(name) >= 2:
-    #                     print(f"  ✓ Poster name (description regex): {name}")
-    #                     return name
-    # except Exception as e:
-    #     print(f"  ⚠ Description regex error: {e}")
 
     print("  \u26a0 Could not extract poster name \u2014 using generic greeting.")
     return ""

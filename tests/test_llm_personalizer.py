@@ -267,12 +267,6 @@ def scrape_listing_details(driver, listing_url: str) -> dict:
         path = "/" + listing_url.lstrip("/")
     nachricht_url = f"https://www.wg-gesucht.de/nachricht-senden{path}"
 
-    NOT_A_NAME = {
-        'seite', 'anmelden', 'registrieren', 'suche', 'anzeige', 'wg',
-        'zimmer', 'wohnung', 'nachricht', 'senden', 'kontakt', 'login',
-        'startseite', 'home', 'back', 'weiter', 'menu', 'mehr', 'alle',
-        'zur', 'von', 'nach', 'für', 'dem', 'der', 'die', 'das', 'profil',
-    }
 
     try:
         driver.get(nachricht_url)
@@ -314,7 +308,7 @@ def scrape_listing_details(driver, listing_url: str) -> dict:
                     else:
                         text = words[0]
                         
-                    if len(text) >= 3 and text[0].isupper() and text.replace(" ", "").replace("-", "").replace(".", "").isalpha() and text.lower() not in NOT_A_NAME:
+                    if len(text) >= 3 and text[0].isupper() and text.replace(" ", "").replace("-", "").replace(".", "").isalpha():
                         found_name = text
                         break
                 if found_name:
