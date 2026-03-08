@@ -1,5 +1,5 @@
-# WG-Gesucht / ImmoSearch Bot
-This repository contains an automated application bot for **WG-Gesucht** (and historically ImmoScout24), tailored for efficiency while keeping a human touch.
+# WG-Ninja 🥷
+An advanced, stealth-based Python bot for automating WG-Gesucht applications. Features a native Selenium Chromedriver to bypass bot protection, smart agency blacklisting, and integrates Google Gemma 3 4B-IT (via HuggingFace) to dynamically parse listings and generate highly personalized, human-like rental applications at scale.
 
 **Disclaimer**: Use at your own risk. Respect the platforms' terms of service. This tool is provided "as is" without warranty.
 
