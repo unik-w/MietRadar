@@ -109,43 +109,6 @@ def _detect_listing_type(listing_url: str, listing_description: str) -> str:
 
 
 
-# ---------------------------------------------------------------------------
-# Template parsing
-# ---------------------------------------------------------------------------
-
-def _parse_template_paragraphs(template: str) -> dict:
-    """
-    Split message.txt into its structural components.
-    Expects the standard format:
-      Hallo {name},
-
-      [opener line]
-
-      [para 1 — professional]
-
-      [para 2 — personal]
-
-      [closing question]
-
-      [sign-off line]
-
-      [signature name]
-    """
-    # Normalise line endings, strip trailing whitespace
-    text = template.strip().replace("\r\n", "\n")
-    blocks = [b.strip() for b in re.split(r"\n\n+", text) if b.strip()]
-
-    result = {
-        "greeting":  blocks[0] if len(blocks) > 0 else "",
-        "opener":    blocks[1] if len(blocks) > 1 else "",
-        "para1":     blocks[2] if len(blocks) > 2 else "",
-        "para2":     blocks[3] if len(blocks) > 3 else "",
-        "closing":   blocks[4] if len(blocks) > 4 else "",
-        "signoff":   blocks[5] if len(blocks) > 5 else "",
-        "signature": "\n".join(blocks[6:]) if len(blocks) > 6 else "",
-    }
-    return result
-
 
 # ---------------------------------------------------------------------------
 # LLM: generate only the personalisation paragraph
@@ -245,14 +208,9 @@ def personalise_message(
     Build a personalised application message.
 
     Structure of the output:
-      1. Greeting                    ← from template (with real name)
-      2. Opener line                 ← from template verbatim
-      3. Professional paragraph      ← from template verbatim
-      4. Personal/hobbies paragraph  ← from template verbatim
-      5. LLM personalisation para    ← generated, or omitted on failure
-      6. Dynamic closing question    ← adapted to listing type
-      7. Sign-off + signature        ← from template verbatim
-
+      1. Greeting/Content              ← from template (with real name if substituted)
+      2. LLM personalisation para      ← inserted dynamically in place of {LLM_TEXT}
+      
     Parameters
     ----------
     template : str
@@ -284,8 +242,7 @@ def personalise_message(
     if listing_description.strip():
         llm_para = _generate_personalisation_para(listing_description)
 
-    # --- Assemble final message -----------------------------------------
-    # Scenario A: The user explicitly defined {LLM_TEXT} or [LLM TEXT] in their template
+    # Assemble final message via direct placeholder injection
     if "{LLM_TEXT}" in filled_template or "[LLM TEXT]" in filled_template:
         if llm_para:
             filled_template = filled_template.replace("{LLM_TEXT}", llm_para).replace("[LLM TEXT]", llm_para)
@@ -293,32 +250,10 @@ def personalise_message(
             # If generation failed, perfectly remove the placeholder
             filled_template = filled_template.replace("{LLM_TEXT}", "").replace("[LLM TEXT]", "")
             # Clean up any resulting triple newlines/awkward gaps left behind
+            import re
             filled_template = re.sub(r'\n{3,}', '\n\n', filled_template)
-        return filled_template.strip()
-
-    # Scenario B: Legacy fallback (append to the end of blocks)
-    parts = _parse_template_paragraphs(filled_template)
-    sections = [
-        parts["greeting"],
-        parts["opener"],
-        parts["para1"],
-        parts["para2"],
-    ]
-
-    if llm_para:
-        sections.append(llm_para)
-
-    # Template closing question (e.g. "Gerne würde ich die Zimmer...")
-    if parts.get("closing"):
-        sections.append(parts["closing"])
-
-    if parts.get("signoff"):
-        sections.append(parts["signoff"])
-
-    if parts.get("signature"):
-        sections.append(parts["signature"])
-
-    return "\n\n".join(sections)
+            
+    return filled_template.strip()
 
 
 # ---------------------------------------------------------------------------
