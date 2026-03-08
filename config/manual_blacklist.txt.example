@@ -1,0 +1,8 @@
+# Put the anzeige IDs of listings you want to blacklist here (one per line)
+# You can find the ID at the very end of the WG-Gesucht URL.
+# Example: For https://www.wg-gesucht.de/wg-zimmer-in-Muenchen.1234567.html
+# You would simply add:
+# 1234567
+
+13153886
+9876543

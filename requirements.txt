@@ -1,0 +1,24 @@
+scrapy>=2.11.0
+selenium>=4.15.0
+python-dotenv>=1.0.0
+webdriver-manager>=4.0.0
+undetected-chromedriver>=3.5.5
+setuptools>=70.0.0
+
+# ── LLM personalisation (Gemma 3 1B via PyTorch + Apple Metal MPS) ─────────
+# Install with:  pip install torch transformers accelerate
+#
+# Apple Silicon (M1/M2/M3):
+#   - PyTorch uses the MPS (Metal Performance Shaders) backend automatically
+#   - Set PYTORCH_ENABLE_MPS_FALLBACK=1 if you hit unsupported ops
+#
+# Model: google/gemma-3-4b-it  (~2 GB, downloaded via Hugging Face Hub)
+# Accept the Gemma 3 licence at: https://huggingface.co/google/gemma-3-1b-it
+# Optional: huggingface-cli login  (or set HF_TOKEN in .env)
+#
+# jax-metal is also installed (future use / experimentation):
+#   pip install jax-metal
+torch>=2.0.0
+transformers>=4.50.0
+accelerate>=0.30.0
+kagglehub>=0.2.0
