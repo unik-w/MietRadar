@@ -306,14 +306,16 @@ def personalise_message(
         llm_para = _generate_personalisation_para(listing_description)
 
     # --- Assemble final message -----------------------------------------
-    # Scenario A: The user explicitly defined [LLM TEXT] in their template
-    if "[LLM TEXT]" in filled_template:
+    # Scenario A: The user explicitly defined {LLM_TEXT} or [LLM TEXT] in their template
+    if "{LLM_TEXT}" in filled_template or "[LLM TEXT]" in filled_template:
         if llm_para:
-            return filled_template.replace("[LLM TEXT]", llm_para)
+            filled_template = filled_template.replace("{LLM_TEXT}", llm_para).replace("[LLM TEXT]", llm_para)
         else:
-            # If generation failed, just remove the placeholder and any double linebreaks
-            clean_message = filled_template.replace("[LLM TEXT]\n\n", "").replace("[LLM TEXT]", "")
-            return clean_message.strip()
+            # If generation failed, perfectly remove the placeholder
+            filled_template = filled_template.replace("{LLM_TEXT}", "").replace("[LLM TEXT]", "")
+            # Clean up any resulting triple newlines/awkward gaps left behind
+            filled_template = re.sub(r'\n{3,}', '\n\n', filled_template)
+        return filled_template.strip()
 
     # Scenario B: Legacy fallback (append to the end of blocks)
     parts = _parse_template_paragraphs(filled_template)
