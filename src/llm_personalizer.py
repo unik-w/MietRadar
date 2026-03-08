@@ -107,27 +107,6 @@ def _detect_listing_type(listing_url: str, listing_description: str) -> str:
     return "wg"  # default
 
 
-def _build_closing(listing_type: str, poster_name: str) -> str:
-    """
-    Returns an appropriate closing question adapted to the listing type.
-    """
-    name_part = f" und {poster_name} persönlich kennenlernen" if poster_name else " euch persönlich kennenlernen"
-
-    if listing_type == "wohnung":
-        return (
-            f"Ich würde mich sehr freuen, die Wohnung{name_part}. "
-            f"Wäre ein Besichtigungstermin möglich?"
-        )
-    elif listing_type == "zimmer":
-        return (
-            f"Gerne würde ich das Zimmer besichtigen und mehr darüber erfahren. "
-            f"Wäre ein kurzes Kennenlernen möglich?"
-        )
-    else:  # wg
-        return (
-            f"Gerne würde ich die WG{name_part}. "
-            f"Wäre es möglich, einen Besichtigungstermin zu vereinbaren?"
-        )
 
 
 # ---------------------------------------------------------------------------
