@@ -15,7 +15,7 @@ An advanced, stealth-based Python bot for automating WG-Gesucht applications. Fe
 ## Directory Structure
 To keep the application cleanly segmented, the repository follows a professional structure:
 ```text
-immo/
+wg-ninja/
 ├── config/                 # ALL user-editable configurations
 │   ├── .env                # Secrets (credentials, URLs, HuggingFace token)
 │   ├── llm_persona.txt     # The prompt/identity used by the LLM (editable)
@@ -79,7 +79,7 @@ Leave it running! It will scan up to 10 pages in the background, send messages p
 You can test individual components before unleashing the bot on live listings!
 
 ### 1. Test LLM Personalisation (`test_llm_personalizer.py`)
-This test simulates the entire pipeline for the LLM. It fetches a few listings from WG-Gesucht, scrapes them, and uses your `config/llm_persona.txt` to generate an AI response injected into your `config/message.txt` placeholder `[LLM TEXT]`. **It will not send the message, it will only print it to the terminal.**
+This test simulates the entire pipeline for the LLM. It fetches a few listings from WG-Gesucht, scrapes them, and uses your `config/llm_persona.txt` to generate an AI response injected into your `config/message.txt` placeholder `{LLM_TEXT}`. **It will not send the message, it will only print it to the terminal.**
 ```bash
 python tests/test_llm_personalizer.py --listings 1
 ```
