@@ -8,6 +8,7 @@ venv/
 message.txt
 
 # Runtime data files
+data/
 *.json
 *.dat
 
@@ -129,4 +130,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# End of https://www.gitignore.io/api/pythondata/wgbot_profile/
+# End of https://www.gitignore.io/api/python
