@@ -16,6 +16,12 @@ config/.env
 config/manual_blacklist.txt
 config/message.txt
 
+# Legacy / Future features
+src/immo.py
+src/submit.py
+src/immo_spider.py
+src/wg-gesucht-spider.py
+
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
 

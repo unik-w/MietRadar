@@ -31,11 +31,7 @@ immo/
 ├── src/                    # Core Python application logic
 │   ├── wg-gesucht.py       # Main Application Loop
 │   ├── submit_wg.py        # Browser automation & interactions
-│   ├── llm_personalizer.py # LLM inference and text synthesis
-│   ├── immo.py             # (Legacy) Immoscout bot
-│   ├── submit.py           # (Legacy) Immoscout submission
-│   ├── wg-gesucht-spider.py# (Legacy) Scrapy spider definition
-│   └── immo_spider.py      # (Legacy) Scrapy spider definition
+│   └── llm_personalizer.py # LLM inference and text synthesis
 ├── tests/                  # Unit tests and isolated scripts
 │   └── ...
 ├── README.md               # Documentation
