@@ -412,9 +412,9 @@ def run_test(max_listings: int = 3, search_url: str = "", use_llm: bool = True) 
                     msg = msg.replace("{name}", details["poster_name"])
                 else:
                     msg = msg.replace(" {name}", "").replace("{name}", "")
-                    
-                msg = msg.replace("[LLM TEXT]\n\n", "").replace("[LLM TEXT]", "")
-
+                msg = msg.replace("{LLM_TEXT}", "")
+                import re
+                msg = re.sub(r'\n{3,}', '\n\n', msg)
             print(f"\n  {GREEN}{BOLD}--- Generated Message ---{RESET}")
             for line in msg.splitlines():
                 print(f"  {line}")

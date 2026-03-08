@@ -12,8 +12,8 @@ Architecture (clean separation of concerns):
   │  Closing     →  dynamically adapted to listing type   │
   └────────────────────────────────────────────────────────┘
 
-The LLM never sees or rewrites Unik's personal info — it only generates
-a single bridge paragraph that connects Unik's interests to the listing.
+The LLM never sees or rewrites User's personal info — it only generates
+a single bridge paragraph that connects User's interests to the listing.
 """
 
 from __future__ import annotations
@@ -243,12 +243,12 @@ def personalise_message(
         llm_para = _generate_personalisation_para(listing_description)
 
     # Assemble final message via direct placeholder injection
-    if "{LLM_TEXT}" in filled_template or "[LLM TEXT]" in filled_template:
+    if "{LLM_TEXT}" in filled_template:
         if llm_para:
-            filled_template = filled_template.replace("{LLM_TEXT}", llm_para).replace("[LLM TEXT]", llm_para)
+            filled_template = filled_template.replace("{LLM_TEXT}", llm_para)
         else:
             # If generation failed, perfectly remove the placeholder
-            filled_template = filled_template.replace("{LLM_TEXT}", "").replace("[LLM TEXT]", "")
+            filled_template = filled_template.replace("{LLM_TEXT}", "")
             # Clean up any resulting triple newlines/awkward gaps left behind
             import re
             filled_template = re.sub(r'\n{3,}', '\n\n', filled_template)
