@@ -34,6 +34,7 @@ wg-ninja/
 │   └── llm_personalizer.py # LLM inference and text synthesis
 ├── tests/                  # Unit tests and isolated scripts
 │   └── ...
+├── check_replies.py        # Script to track responses/status
 ├── README.md               # Documentation
 └── requirements.txt        # Python dependencies
 ```
@@ -80,6 +81,21 @@ Run the bot directly from the root directory:
 python src/wg-gesucht.py
 ```
 Leave it running! It will scan up to 10 pages in the background, send messages precisely when needed, update local blacklists, and then sleep based on the `CHECK_INTERVAL_SECONDS` defined in your `.env`.
+
+## Tracking Replies 📈
+You can generate a report of all sent applications and their current status using the reply tracker. This script scans your WG-Gesucht inbox (up to 10 pages deep) and matches current conversations with your sent audit log.
+
+To run the report:
+```bash
+python src/check_replies.py
+```
+
+The results are saved to `data/wg_replies_report.csv` with the following status indicators:
+- **🟢 (Green)**: **Replied**. You received a message from the host.
+- **🟡 (Yellow)**: **Pending**. No reply yet, but the application was sent less than 3 days ago.
+- **🔴 (Red)**: **Expired/No Reply**. No response received, and it has been more than 3 days since you applied.
+
+At the bottom of the CSV, you will find a summary table showing the total counts and success percentages for each category.
 
 ## Testing the Bot Offline
 
