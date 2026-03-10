@@ -24,6 +24,7 @@ wg-ninja/
 ├── data/                   # Dynamic memory & temp storage (DO NOT EDIT)
 │   ├── wg_diff.dat         # Record of processed IDs
 │   ├── wg_sent_request.dat # Audit log with timestamps
+│   ├── wg_replies_report.csv # Tracker report (auto-generated)
 │   ├── wg_offer.json       # Debug snapshot of current scan
 │   └── wgbot_profile/      # Browser session cache (cookies)
 ├── scripts/                # Setup & utility bash scripts
@@ -31,10 +32,10 @@ wg-ninja/
 ├── src/                    # Core Python application logic
 │   ├── wg-gesucht.py       # Main Application Loop
 │   ├── submit_wg.py        # Browser automation & interactions
-│   └── llm_personalizer.py # LLM inference and text synthesis
+│   ├── llm_personalizer.py # LLM inference and text synthesis
+│   └── check_replies.py    # Script to track responses/status
 ├── tests/                  # Unit tests and isolated scripts
 │   └── ...
-├── check_replies.py        # Script to track responses/status
 ├── README.md               # Documentation
 └── requirements.txt        # Python dependencies
 ```
