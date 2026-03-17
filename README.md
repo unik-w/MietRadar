@@ -113,3 +113,10 @@ Because WG-Gesucht employs bot protection, the Chrome instance must be properly 
 ```bash
 python tests/test_stealth.py
 ```
+
+---
+
+## Credits & History 📜
+This project is an advanced evolution of the original [immo](https://github.com/nickirk/immo) repository by [nickirk](https://github.com/nickirk). 
+
+While **WG-Ninja** has been completely restructured and modernized with Python 3 support, Selenium stealth techniques, and LLM-based personalization, the original git history has been merged and preserved in this repository to ensure proper attribution to the foundational work of the original contributors.
