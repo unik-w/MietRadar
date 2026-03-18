@@ -8,7 +8,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Add root to sys.path to allow imports from src/ if run directly
-# Since we are already in src/, we just need to make sure we can import peer modules.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.submit_wg import create_driver, random_sleep
 from selenium.webdriver.common.by import By
@@ -18,6 +17,33 @@ from selenium.webdriver.support import expected_conditions as EC
 load_dotenv(str(Path(__file__).parent.parent / "config" / ".env"))
 WG_EMAIL = os.getenv("WG_EMAIL")
 WG_PASSWORD = os.getenv("WG_PASSWORD")
+
+def parse_wg_date(date_str: str) -> datetime:
+    """
+    Parse WG-Gesucht date strings like '06.03.2026', 'heute', 'gestern', or 'vor X Tagen'.
+    Returns a datetime object (midnight of that day).
+    """
+    date_str = date_str.lower().strip()
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    if "heute" in date_str or "stund" in date_str or "minut" in date_str:
+        return today
+    if "gestern" in date_str:
+        return today - timedelta(days=1)
+    
+    # Handle "vor X Tagen"
+    m_days = re.search(r'vor (\d+)\s+tagen', date_str)
+    if m_days:
+        return today - timedelta(days=int(m_days.group(1)))
+    
+    # Try DD.MM.YYYY
+    m = re.search(r'(\d{2})\.(\d{2})\.(\d{4})', date_str)
+    if m:
+        return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+    
+    # Fallback to very old date if unparseable
+    return datetime(2000, 1, 1)
+
 
 def ensure_logged_in(driver) -> None:
     driver.get("https://www.wg-gesucht.de/")
@@ -70,7 +96,6 @@ def get_sent_requests(dat_path):
         
         if id_line.startswith("ID: "):
             url = id_line[4:].strip()
-            # Extract anzeigenummer from wg_sent_request url
             m = re.search(r'\.(\d{6,10})\.html', url)
             if not m:
                 continue
@@ -92,93 +117,169 @@ def get_sent_requests(dat_path):
     return records
 
 
-def build_inbox_dictionary(driver):
-    print("\nLoading Inbox (Nachrichten) to fetch all conversations...")
-    driver.get("https://www.wg-gesucht.de/nachrichten.html")
-    random_sleep(3, 5)
+def load_previous_report(csv_path):
+    """
+    Load existing 🟢 (Replied) conversations from the CSV to avoid redundant checking.
+    Returns a dict: { nachrichten_id: { 'anzeigenummer': str, 'name': str } }
+    """
+    cache = {}
+    if not os.path.exists(csv_path):
+        return cache
+
+    try:
+        with open(csv_path, "r", newline="", encoding="utf-8-sig") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row.get("Status") == "🟢" and row.get("Nachrichten-ID"):
+                    cache[row["Nachrichten-ID"]] = {
+                        "anzeigenummer": row["Anzeigenummer"],
+                        "name": row["Name"]
+                    }
+    except Exception as e:
+        print(f"⚠️ Could not load previous report cache: {e}")
     
-    grouped = {}
+    if cache:
+        print(f"Loaded {len(cache)} already-replied conversations from cache.")
+    return cache
+
+
+def build_inbox_dictionary(driver, max_pages=10, green_cache=None, earliest_date=None):
+    """
+    Scrape the Posteingang (filter_type=0) inbox pages. 
+    If a conversation is in green_cache, skip visiting its page.
+    Filters out messages older than earliest_date.
+    """
+    print("\nLoading Posteingang (Inbox) to fetch conversations...")
+    if earliest_date:
+        # Normalize earliest_date to start of day for comparison
+        threshold = earliest_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        print(f"Threshold date: {threshold.strftime('%Y-%m-%d')} (filtering out older messages)")
+    else:
+        threshold = None
+
+    conversations = {}  # nachrichten_id -> { "href": str, "name": str, "title": str }
+    green_cache = green_cache or {}
     
-    # Scrape up to 10 pages in the inbox
-    for page in range(1, 11):
-        chat_links = driver.find_elements(By.XPATH, "//a[contains(@href, 'nachricht.html?nachrichten-id')]")
+    stop_pagination = False
+    for page in range(1, max_pages + 1):
+        if stop_pagination: break
         
-        for link in chat_links:
-            href = link.get_attribute("href")
-            txt = link.text.strip()
-            if not href or not txt:
-                continue
-            if href not in grouped:
-                grouped[href] = []
-            if txt not in grouped[href]:
-                grouped[href].append(txt)
-                
-        # Try to advance to the next page
-        next_page = page + 1
-        try:
-            btn = driver.find_element(By.XPATH, f"//a[@href='#page-{next_page}']")
-            driver.execute_script("arguments[0].scrollIntoView(true);", btn)
-            random_sleep(0.5, 1)
-            driver.execute_script("arguments[0].click();", btn)
-            print(f"Loading inbox page {next_page}...")
-            random_sleep(2, 4)
-        except Exception:
-            # End of pagination
+        url = f"https://www.wg-gesucht.de/nachrichten.html?filter_type=0&page={page}"
+        driver.get(url)
+        random_sleep(2, 4)
+        print(f"Scanning Posteingang page {page}...")
+        
+        items = driver.find_elements(By.CSS_SELECTOR, "div.conversation_list_item")
+        if not items:
             break
-            
-            
-    convo_data = []
-    for href, texts in grouped.items():
-        if len(texts) >= 3:
-            name = texts[1] if len(texts[0]) <= 2 else texts[0]
-            convo_data.append((href, name))
-        elif len(texts) == 2:
-            name = texts[0]
-            convo_data.append((href, name))
-        else:
-            convo_data.append((href, texts[0] if texts else "Unknown"))
-            
-    inbox_map = {}
-    total = len(convo_data)
-    print(f"Found {total} unique conversation active links. Fast-mapping IDs...")
-    
-    for idx, (href, name) in enumerate(convo_data, 1):
-        driver.get(href)
-        random_sleep(0.5, 1.0)
         
-        # 1. Look for Anzeigenummer link on the page
-        links = driver.find_elements(By.XPATH, "//a[contains(@href, '.html')]")
+        page_found = 0
+        for item in items:
+            try:
+                # ------------------------------------------------------
+                # Date Check
+                # ------------------------------------------------------
+                if threshold:
+                    date_els = item.find_elements(By.CSS_SELECTOR, "div.latest_message_timestamp_list")
+                    if date_els:
+                        raw_date_text = date_els[0].text.strip()
+                        msg_date = parse_wg_date(raw_date_text)
+                        
+                        # Debug unparseable dates but don't stop the loop for them
+                        if msg_date == datetime(2000, 1, 1):
+                            print(f"  [DEBUG] Could not parse date format: '{raw_date_text}'")
+                            continue
+
+                        # Only stop if we genuinely found a confirmed old date
+                        if msg_date < threshold:
+                            print(f"  Reached messages from {msg_date.strftime('%Y-%m-%d')} (before bot started). Stopping.")
+                            stop_pagination = True
+                            break
+
+                # ------------------------------------------------------
+                # Scrape Conversation Data
+                # ------------------------------------------------------
+                links = item.find_elements(By.CSS_SELECTOR, "a.link-conversation-list[href*='nachrichten-id']")
+                if not links: continue
+                href = links[0].get_attribute("href")
+                if not href: continue
+                
+                m = re.search(r'nachrichten-id=(\d+)', href)
+                if not m: continue
+                nachr_id = m.group(1)
+                
+                if nachr_id in conversations: continue
+                
+                name_els = item.find_elements(By.CSS_SELECTOR, "span.list_item_public_name")
+                name = name_els[0].text.strip() if name_els else "Unknown"
+                
+                h3_els = item.find_elements(By.TAG_NAME, "h3")
+                title = h3_els[0].text.strip() if h3_els else ""
+                
+                conversations[nachr_id] = {"href": href, "name": name, "title": title}
+                page_found += 1
+            except Exception:
+                continue
+        
+        print(f"  Found {page_found} conversations on page {page}.")
+        if page_found < 25 or stop_pagination:
+            break
+    
+    total = len(conversations)
+    print(f"\nCollected {total} relevant conversations from Posteingang.")
+    
+    inbox_map = {}  # anzeigenummer -> { "name": str, "replied": True, "nachr_id": str }
+    
+    for idx, (nachr_id, info) in enumerate(conversations.items(), 1):
+        # 1. Check if we already have this in our "Replied" cache
+        if nachr_id in green_cache:
+            c_data = green_cache[nachr_id]
+            inbox_map[c_data["anzeigenummer"]] = {
+                "name": c_data["name"], 
+                "replied": True, 
+                "nachr_id": nachr_id
+            }
+            continue
+
+        # 2. Otherwise, visit the page
+        print(f"  [{idx}/{total}] Checking new conversation with {info['name']}...")
+        driver.get(info["href"])
+        random_sleep(0.3, 0.6)
+        
         anzeigenummer = None
-        for a in links:
-            l_href = a.get_attribute("href")
-            if l_href:
-                m = re.search(r'\.(\d{6,10})\.html', l_href)
+        page_src = None
+        
+        # Link check
+        listing_links = driver.find_elements(By.CSS_SELECTOR, "a[href*='wg-zimmer'], a[href*='wohnungen'], a[href*='haeuser'], a[href*='1-zimmer']")
+        for lnk in listing_links:
+            href = lnk.get_attribute("href")
+            if href:
+                m = re.search(r'\.(\d{6,10})\.html', href)
                 if m:
                     anzeigenummer = m.group(1)
-                    break 
-                    
-        
-        # 2. Check for replies from the poster
-        # WG-Gesucht uses `.message` for chat bubbles, and `.my_message` specifically for the user's messages.
-        replied = False
-        try:
-            chat_bubbles = driver.find_elements(By.CSS_SELECTOR, ".message")
-            for bubble in chat_bubbles:
-                classes = bubble.get_attribute("class") or ""
-                # If there's a message block that is NOT ours, they replied!
-                if "my_message" not in classes:
-                    replied = True
                     break
-        except Exception:
-            pass
-            
-        page_src = driver.page_source
-        if "Anzeige wurde gelöscht" in page_src or "deaktiviert" in page_src:
-            name = "Deactivated Ad / " + name
-            
+        
+        # Fallback 1: deleted ad banner
+        if not anzeigenummer:
+            page_src = driver.page_source
+            m = re.search(r'Die Anzeige mit der Nummer\s*(?:<[^>]+>)?\s*(\d{6,10})\s*(?:<[^>]+>)?\s*existiert nicht', page_src)
+            if m:
+                anzeigenummer = m.group(1)
+        
+        # Fallback 2: regex general
+        if not anzeigenummer:
+            if not page_src: page_src = driver.page_source
+            m = re.search(r'\.(\d{6,10})\.html', page_src)
+            if m: anzeigenummer = m.group(1)
+        
         if anzeigenummer:
-            inbox_map[anzeigenummer] = {"name": name, "replied": replied}
+            if not page_src: page_src = driver.page_source
+            name = info["name"]
+            if "Anzeige wurde gelöscht" in page_src or "deaktiviert" in page_src:
+                name = "Deactivated Ad / " + name
             
+            inbox_map[anzeigenummer] = {"name": name, "replied": True, "nachr_id": nachr_id}
+    
     return inbox_map
 
 
@@ -192,19 +293,24 @@ def check_replies():
         print("No sent requests found. Exiting.")
         return
 
+    # Find the earliest message ever sent to use as a global threshold
+    earliest_date = min(r["sent_time"] for r in records)
+    
+    # Load cache of previous replies to speed up scanning
+    green_cache = load_previous_report(csv_path)
+
     now = datetime.now()
     driver = create_driver()
     try:
         ensure_logged_in(driver)
         
-        inbox_map = build_inbox_dictionary(driver)
+        inbox_map = build_inbox_dictionary(driver, green_cache=green_cache, earliest_date=earliest_date)
         
-        print(f"\nWriting final report for {len(records)} records...")
+        print(f"\nWriting updated report for {len(records)} records...")
         with open(csv_path, "w", newline="", encoding="utf-8-sig") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["Anzeigenummer", "Name", "Status"])
+            writer.writerow(["Anzeigenummer", "Nachrichten-ID", "Name", "Status"])
             
-            # Counters for summary
             counts = {"🟢": 0, "🟡": 0, "🔴": 0}
             
             for rec in records:
@@ -212,27 +318,28 @@ def check_replies():
                 sent_time = rec["sent_time"]
                 is_old = (now - sent_time).total_seconds() > 3 * 24 * 3600
                 
+                # Default values
+                nachr_id = "-"
+                
                 if anzeigenummer in inbox_map:
                     chat_info = inbox_map[anzeigenummer]
                     name = chat_info["name"]
-                    if chat_info["replied"]:
-                        status = "🟢"
-                    else:
-                        status = "🔴" if is_old else "🟡"
+                    nachr_id = chat_info.get("nachr_id", "-")
+                    status = "🟢"
                 else:
                     name = "Unbekannt / Gelöscht"
                     status = "🔴" if is_old else "🟡"
                 
                 counts[status] += 1
-                writer.writerow([anzeigenummer, name, status])
+                writer.writerow([anzeigenummer, nachr_id, name, status])
             
-            # Add summary breakdown at the bottom
+            # Summary
             writer.writerow([])
-            writer.writerow(["SUMMARY", "Count", "Percentage"])
+            writer.writerow(["SUMMARY", "", "Count", "Percentage"])
             total = len(records)
             for s, c in counts.items():
                 pct = f"{(c/total)*100:.1f}%" if total > 0 else "0%"
-                writer.writerow([s, c, pct])
+                writer.writerow([s, "", c, pct])
                 
         print(f"\n✅ All done! Report saved to {csv_path}")
     finally:
