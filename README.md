@@ -1,117 +1,185 @@
-# WG-Ninja 🥷
-An advanced, stealth-based Python bot for automating WG-Gesucht applications. Features a native Selenium Chromedriver to bypass bot protection, smart agency blacklisting, and integrates Google Gemma 3 4B-IT (via HuggingFace) to dynamically parse listings and generate highly personalized, human-like rental applications at scale.
+# MietRadar 📡
+### Automated Apartment & WG Application Bot for Germany — WG-Gesucht + ImmobilienScout24
+
+> **Scan. Apply. Move in.** — An AI-powered Python bot that monitors [WG-Gesucht](https://www.wg-gesucht.de) and [ImmobilienScout24](https://www.immobilienscout24.de), automatically applies to new rental listings, and personalises each application using a local LLM.
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: GPL](https://img.shields.io/badge/license-GPL-green.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platforms-WG--Gesucht%20%7C%20ImmoScout24-orange.svg)](#features)
+
+---
+
+## What is MietRadar?
+
+Finding an apartment in Germany — especially in cities like Munich, Berlin, or Hamburg — is brutally competitive. Listings disappear within minutes. **MietRadar** monitors WG-Gesucht and ImmobilienScout24 around the clock, instantly applies to new listings matching your search filters, and optionally uses **Google Gemma 3 4B-IT** (running locally on your machine) to write a personalised paragraph for each application.
+
+**Keywords**: Wohnung Bot, WG Bot, apartment bot Germany, Wohnungssuche automatisieren, WG-Gesucht Bot, ImmobilienScout24 Bot, rental application automation, Mietwohnung Bot, automated apartment search Germany, Bewerbung automatisch senden
 
 **Disclaimer**: Use at your own risk. Respect the platforms' terms of service. This tool is provided "as is" without warranty.
 
 ## Features
-- **Zero-Touch Operation**: Scans WG-Gesucht periodically (e.g., every 10 minutes), navigating through multiple pages to find the freshest listings.
-- **Stealth & Clean Sessions**: Utilizes headless Chrome via `webdriver_manager` with a dedicated unique profile, bypassing many standard bot checks.
-- **Smart Blacklisting**: 
-  - *Automatic Check*: Immediately blacklists sent applications to prevent spam.
-  - *Commercial Block*: Actively skips commercial/corporate agencies (like HousingAnywhere, Spacest, Medici) before even clicking the listing.
-  - *Manual Override*: You can drop links into a text file to ensure they are ignored.
-- **LLM Personalisation** (Optional): Harnesses local AI (`Gemma 3 4B-IT` via HuggingFace on PyTorch) to read listing descriptions and dynamically generate highly personalized application paragraphs, inserting them alongside your standard template.
+
+| Feature | Description |
+|---|---|
+| 🏠 **Dual Platform** | Supports both WG-Gesucht and ImmobilienScout24 |
+| 🔄 **Zero-Touch Loop** | Scans search results every N minutes, applies to new listings automatically |
+| 🥷 **Stealth Automation** | Chrome with anti-detection patches, human-like typing & clicking |
+| 🚫 **Smart Blacklisting** | Auto-blocks sent listings, skips sponsored/agency ads, manual override lists |
+| 🧠 **AI Personalisation** | Local Gemma 3 4B-IT generates a unique paragraph per listing (optional) |
+| 📊 **Reply Tracking** | CSV reports with 🟢/🟡/🔴 status for each application |
+| ⚡ **Shared Pipeline** | Single message template, LLM persona, and helper functions for both platforms |
 
 ## Directory Structure
-To keep the application cleanly segmented, the repository follows a professional structure:
 ```text
-wg-ninja/
-├── config/                 # ALL user-editable configurations
-│   ├── .env                # Secrets (credentials, URLs, HuggingFace token)
-│   ├── llm_persona.txt     # The prompt/identity used by the LLM (editable)
-│   ├── manual_blacklist.txt# Paste links here to ignore them
-│   └── message.txt         # Your main application message template
-├── data/                   # Dynamic memory & temp storage (DO NOT EDIT)
-│   ├── wg_diff.dat         # Record of processed IDs
-│   ├── wg_sent_request.dat # Audit log with timestamps
-│   ├── wg_replies_report.csv # Tracker report (auto-generated)
-│   ├── wg_offer.json       # Debug snapshot of current scan
-│   └── wgbot_profile/      # Browser session cache (cookies)
-├── scripts/                # Setup & utility bash scripts
-│   └── setup.sh            
-├── src/                    # Core Python application logic
-│   ├── wg-gesucht.py       # Main Application Loop
-│   ├── submit_wg.py        # Browser automation & interactions
-│   ├── llm_personalizer.py # LLM inference and text synthesis
-│   └── check_replies.py    # Script to track responses/status
-├── tests/                  # Unit tests and isolated scripts
-│   └── ...
-├── README.md               # Documentation
-└── requirements.txt        # Python dependencies
+miet-radar/
+├── config/                         # User-editable configurations
+│   ├── .env                        # Secrets (credentials, URLs, HF token)
+│   ├── .env.example                # Template for .env
+│   ├── llm_persona.txt             # LLM prompt/identity (editable)
+│   ├── message.txt                 # Shared message template (both bots)
+│   ├── message.txt.example         # Template for message.txt
+│   ├── wg_blacklist.txt            # Manual blacklist for WG-Gesucht
+│   ├── wg_blacklist.txt.example    # Template
+│   ├── immo_blacklist.txt          # Manual blacklist for ImmoScout24
+│   └── immo_blacklist.txt.example  # Template
+├── data/                           # Runtime data (auto-generated, DO NOT EDIT)
+│   ├── wg_diff.dat                 # Processed WG IDs
+│   ├── wg_sent_request.dat         # WG audit log with timestamps
+│   ├── wg_replies_report.csv       # WG reply tracker
+│   ├── wg_offer.json               # WG scan snapshot
+│   ├── wgbot_profile/              # WG browser session cache
+│   ├── immo_diff.dat               # Processed ImmoScout IDs
+│   ├── immo_sent_request.dat       # ImmoScout audit log
+│   ├── immo_replies_report.csv     # ImmoScout reply tracker
+│   ├── immo_offer.json             # ImmoScout scan snapshot
+│   └── immobot_profile/            # ImmoScout browser session cache
+├── src/                            # Core Python application logic
+│   ├── wg-gesucht.py               # Main loop — WG-Gesucht
+│   ├── submit_wg.py                # WG browser automation & form submission
+│   ├── check_replies.py            # WG reply tracker
+│   ├── immoscout.py                # Main loop — ImmobilienScout24
+│   ├── submit_immo.py              # IS24 browser automation & form submission
+│   ├── check_replies_immo.py       # IS24 reply tracker
+│   └── llm_personalizer.py         # Shared LLM inference (Gemma 3 4B-IT)
+├── tests/                          # Tests (no live sends)
+│   ├── test_llm_personalizer.py    # WG end-to-end test
+│   ├── test_immo.py                # IS24 end-to-end test
+│   ├── test_stealth.py             # Browser stealth validation
+│   └── test_llm_only.py            # Isolated LLM test
+├── scripts/
+│   └── setup.sh                    # One-command setup script
+├── README.md
+└── requirements.txt
 ```
 
-## Setup & Installation
+## Quick Start
 
 ### 1. Prerequisites
 - Python 3.10+
-- Chrome Browser installed on your machine.
+- Google Chrome installed
 
-### 2. Install Packages
+### 2. Setup (One Command)
+```bash
+git clone https://github.com/YOUR_USERNAME/miet-radar.git
+cd miet-radar
+bash scripts/setup.sh
+```
+The setup script creates a virtual environment, installs all dependencies, and scaffolds config files from templates.
+
+### 2b. Manual Install (Alternative)
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+cp config/.env.example config/.env
+cp config/message.txt.example config/message.txt
 ```
 
 ### 3. Configuration
-1. **Environment Variables**:
-   Copy `config/.env.example` to `config/.env`.
-   Fill out your WG-Gesucht login details (`WG_EMAIL`, `WG_PASSWORD`) and define your `WG_SEARCH_URLS`.
-   *(Optional)* Fill out `HF_TOKEN` if you are using LLM Personalisation.
+1. **Credentials** — Edit `config/.env`:
+   - **WG-Gesucht**: `WG_EMAIL`, `WG_PASSWORD`, `WG_SEARCH_URLS`
+   - **ImmoScout24**: `IMMO_EMAIL`, `IMMO_PASSWORD`, `IMMO_SEARCH_URLS` and personal details (`IMMO_FIRST_NAME`, `IMMO_LAST_NAME`, etc.) for the IS24 contact form.
+   - *(Optional)* `HF_TOKEN` for LLM Personalisation.
 
-2. **Your Message**:
-   Edit `config/message.txt`. Use `{name}` where you want the bot to automatically insert the landlord's name.
-   
-3. **LLM Persona (Optional)**:
-   If using the AI feature (`USE_LLM_PERSONALIZATION=true` in `.env`), edit `config/llm_persona.txt` to give the AI context about who you are and what you care about.
+2. **Message Template** — Edit `config/message.txt`:
+   - Use `{name}` for the landlord's name (auto-filled)
+   - Use `{LLM_TEXT}` for the AI-generated paragraph (auto-filled when LLM is enabled)
 
-4. **Manual Blacklist**:
-   If there is an ad you hate, copy the end of its URL (e.g., `/wg-zimmer-in-Muenchen.12345.html`) and paste it into `config/manual_blacklist.txt`.
+3. **LLM Persona** *(Optional)* — Edit `config/llm_persona.txt`:
+   Set `USE_LLM_PERSONALIZATION=true` in `.env` to enable. The persona auto-adapts to WG vs. apartment listings.
+
+4. **Blacklists**:
+   - `config/wg_blacklist.txt` — paste WG-Gesucht URLs to ignore
+   - `config/immo_blacklist.txt` — paste ImmoScout expose IDs to ignore
 
 ### 4. First Run & CAPTCHAs 🧩
-When you run the bot for the first time, WG-Gesucht will likely present a **CAPTCHA**.
-- The bot is configured to detect this and will **pause** execution.
-- A Chrome window will remain open. You must **manually solve the CAPTCHA** in that window.
-- Once solved, the bot will automatically detect the page change and continue its work.
-- Subsequent runs should be smoother as session cookies are saved in `data/wgbot_profile/`.
+On first run, the platform will likely show a **CAPTCHA**. The bot detects this and **pauses** — solve it manually in the browser window. Subsequent runs use saved session cookies from `data/wgbot_profile/` or `data/immobot_profile/`.
 
-## Running the Bot
+## Usage
 
-Run the bot directly from the root directory:
+### Run the WG-Gesucht Bot
 ```bash
+source venv/bin/activate
 python src/wg-gesucht.py
 ```
-Leave it running! It will scan up to 10 pages in the background, send messages precisely when needed, update local blacklists, and then sleep based on the `CHECK_INTERVAL_SECONDS` defined in your `.env`.
 
-## Tracking Replies 📈
-You can generate a report of all sent applications and their current status using the reply tracker. This script scans your WG-Gesucht inbox (up to 10 pages deep) and matches current conversations with your sent audit log.
-
-To run the report:
+### Run the ImmobilienScout24 Bot
 ```bash
-python src/check_replies.py
+source venv/bin/activate
+python src/immoscout.py
 ```
 
-The results are saved to `data/wg_replies_report.csv` with the following status indicators:
-- **🟢 (Green)**: **Replied**. You received a message from the host.
-- **🟡 (Yellow)**: **Pending**. No reply yet, but the application was sent less than 3 days ago.
-- **🔴 (Red)**: **Expired/No Reply**. No response received, and it has been more than 3 days since you applied.
+Both bots run independently as continuous loops. They scan multiple search result pages, apply to new listings, update blacklists, and sleep for `CHECK_INTERVAL_SECONDS` (configurable in `.env`).
 
-At the bottom of the CSV, you will find a summary table showing the total counts and success percentages for each category.
+## Reply Tracking 📊
 
-## Testing the Bot Offline
+Generate a report of all sent applications and their reply status:
 
-You can test individual components before unleashing the bot on live listings!
+| Command | Report File |
+|---|---|
+| `python src/check_replies.py` | `data/wg_replies_report.csv` |
+| `python src/check_replies_immo.py` | `data/immo_replies_report.csv` |
 
-### 1. Test LLM Personalisation (`test_llm_personalizer.py`)
-This test simulates the entire pipeline for the LLM. It fetches a few listings from WG-Gesucht, scrapes them, and uses your `config/llm_persona.txt` to generate an AI response injected into your `config/message.txt` placeholder `{LLM_TEXT}`. **It will not send the message, it will only print it to the terminal.**
+**Status indicators:**
+- 🟢 **Replied** — host has responded
+- 🟡 **Pending** — no reply yet, sent < 3 days ago
+- 🔴 **No Reply** — no response after 3+ days
+
+## Testing (Dry Run)
+
+Test the full pipeline **without sending** any messages:
+
 ```bash
-python tests/test_llm_personalizer.py --listings 1
-```
+# WG-Gesucht — scrape + LLM personalisation
+python tests/test_llm_personalizer.py --listings 3
 
-### 2. Test Browser Stealth (`test_stealth.py`)
-Because WG-Gesucht employs bot protection, the Chrome instance must be properly disguised. Run this test to ensure your headless Chrome configuration passes typical bot-checks.
-```bash
+# ImmobilienScout24 — scrape + LLM personalisation
+python tests/test_immo.py --listings 3
+
+# ImmoScout24 — template only, no LLM (fast scraping test)
+python tests/test_immo.py --no-llm --listings 3
+
+# Browser stealth validation
 python tests/test_stealth.py
+```
+
+---
+
+## How It Works
+
+```
+┌─────────────┐    ┌──────────────┐    ┌───────────────┐    ┌──────────────┐
+│  Scan search │───▶│ Filter: skip │───▶│ Extract desc  │───▶│ Generate msg │
+│  result pages│    │ sponsored &  │    │ + contact name│    │ (template +  │
+│  (paginated) │    │ blacklisted  │    │ from expose   │    │  LLM paragraph│
+└─────────────┘    └──────────────┘    └───────────────┘    └──────┬───────┘
+                                                                   │
+                                                                   ▼
+                                                           ┌──────────────┐
+                                                           │ Fill form &  │
+                                                           │ send message │
+                                                           │ (stealth)    │
+                                                           └──────────────┘
 ```
 
 ---
@@ -119,4 +187,4 @@ python tests/test_stealth.py
 ## Credits & History 📜
 This project is an advanced evolution of the original [immo](https://github.com/nickirk/immo) repository by [nickirk](https://github.com/nickirk). 
 
-While **WG-Ninja** has been completely restructured and modernized with Python 3 support, Selenium stealth techniques, and LLM-based personalization, the original git history has been merged and preserved in this repository to ensure proper attribution to the foundational work of the original contributors.
+While **MietRadar** has been completely restructured and modernized with Python 3 support, dual-platform automation, Selenium stealth techniques, and LLM-based personalization, the original git history has been merged and preserved to ensure proper attribution to the foundational work of the original contributors.

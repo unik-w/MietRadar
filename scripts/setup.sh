@@ -1,62 +1,86 @@
 #!/bin/bash
 # =============================================================================
-# IMMO BOT - Setup Script
+# MietRadar — Setup Script
+# =============================================================================
+# Automates: venv creation, dependency install, config scaffolding, data dirs.
+# Usage:  bash scripts/setup.sh
 # =============================================================================
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "🏠 Immo Bot Setup"
+echo ""
+echo "📡 MietRadar Setup"
 echo "=================================="
+echo ""
 
 # 1. Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo "📦 Creating Python virtual environment..."
     python3 -m venv venv
+    echo "   ✅ venv created."
+else
+    echo "📦 Virtual environment already exists."
 fi
 
 # 2. Activate venv and install dependencies
 echo "📦 Installing Python dependencies..."
 source venv/bin/activate
 pip install -r requirements.txt --quiet
+echo "   ✅ Dependencies installed."
 
-# 3. Create Scrapy project if it doesn't exist
-if [ ! -d "immobot" ]; then
-    echo "🕷️  Creating Scrapy project..."
-    scrapy startproject immobot
+# 3. Create data directory if it doesn't exist
+echo "📁 Ensuring data/ directory exists..."
+mkdir -p data
+echo "   ✅ data/ ready."
+
+# 4. Scaffold config files from examples if they don't exist
+echo "📋 Scaffolding config files..."
+
+if [ ! -f "config/.env" ]; then
+    cp config/.env.example config/.env
+    echo "   ✅ Created config/.env from .env.example — EDIT THIS with your credentials!"
+else
+    echo "   ⏭  config/.env already exists."
 fi
 
-# 4. Copy scripts into Scrapy project
-echo "📋 Copying scripts to Scrapy project..."
-cp immo.py immobot/immo.py
-cp submit.py immobot/submit.py
-cp wg-gesucht.py immobot/wg-gesucht.py
-cp submit_wg.py immobot/submit_wg.py
-cp immo_spider.py immobot/immobot/spiders/immo_spider.py
-cp wg-gesucht-spider.py immobot/immobot/spiders/wg_gesucht_spider.py
-cp message.txt immobot/message.txt 2>/dev/null || true
-cp .env immobot/.env 2>/dev/null || true
+if [ ! -f "config/message.txt" ]; then
+    cp config/message.txt.example config/message.txt
+    echo "   ✅ Created config/message.txt — EDIT THIS with your message template!"
+else
+    echo "   ⏭  config/message.txt already exists."
+fi
 
-# 5. Check .env
-if [ ! -f ".env" ]; then
-    echo ""
-    echo "⚠️  No .env file found!"
-    echo "   Copy .env.example to .env and fill in your credentials:"
-    echo "   cp .env.example .env"
-    echo "   Then edit .env with your actual values."
-    exit 1
+if [ ! -f "config/wg_blacklist.txt" ]; then
+    cp config/wg_blacklist.txt.example config/wg_blacklist.txt
+    echo "   ✅ Created config/wg_blacklist.txt"
+else
+    echo "   ⏭  config/wg_blacklist.txt already exists."
+fi
+
+if [ ! -f "config/immo_blacklist.txt" ]; then
+    cp config/immo_blacklist.txt.example config/immo_blacklist.txt
+    echo "   ✅ Created config/immo_blacklist.txt"
+else
+    echo "   ⏭  config/immo_blacklist.txt already exists."
 fi
 
 echo ""
+echo "=================================="
 echo "✅ Setup complete!"
+echo "=================================="
+echo ""
+echo "Next steps:"
+echo "  1. Edit config/.env with your credentials"
+echo "  2. Edit config/message.txt with your application message"
+echo "  3. (Optional) Edit config/llm_persona.txt for LLM personalisation"
 echo ""
 echo "To run the WG-Gesucht bot:"
 echo "   source venv/bin/activate"
-echo "   cd immobot"
-echo "   python wg-gesucht.py"
+echo "   python src/wg-gesucht.py"
 echo ""
-echo "To run the ImmobilienScout bot:"
+echo "To run the ImmobilienScout24 bot:"
 echo "   source venv/bin/activate"
-echo "   cd immobot"
-echo "   python immo.py"
+echo "   python src/immoscout.py"
+echo ""

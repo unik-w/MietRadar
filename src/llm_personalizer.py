@@ -9,7 +9,7 @@ Architecture (clean separation of concerns):
   ┌────────────────────────────────────────────────────────┐
   │  Fixed parts  →  kept verbatim from message.txt       │
   │  LLM output  →  1 short paragraph about the listing   │
-  │  Closing     →  dynamically adapted to listing type   │
+  │  Closing     →  kept verbatim from message.txt        │
   └────────────────────────────────────────────────────────┘
 
 The LLM never sees or rewrites User's personal info — it only generates
@@ -139,13 +139,36 @@ def _generate_personalisation_para(
         logger.error(f"LLM load error: {e}")
         return None
 
-    # Truncate long descriptions based on user setting
+    # Truncate description — distribute budget proportionally across sections.
+    # Sections are delimited by "--- SectionName ---\n" markers (from submit_immo.py).
+    # This ensures Lage/Sonstiges aren't cut if Objektbeschreibung is very long.
     max_desc_chars = int(os.getenv("LLM_MAX_DESC_CHARS", "1200"))
     if len(listing_description) > max_desc_chars:
-        listing_description = listing_description[:max_desc_chars] + "\n[...]"
+        import re as _re
+        # Split into labeled blocks: ["", "--- Objektbeschreibung ---\ntxt", "--- Lage ---\ntxt", ...]
+        blocks = _re.split(r'(?=--- .+ ---)', listing_description.strip())
+        blocks = [b.strip() for b in blocks if b.strip()]
+        if len(blocks) > 1:
+            # Equal budget per section, minimum 100 chars each
+            per_section = max(100, max_desc_chars // len(blocks))
+            truncated = []
+            for block in blocks:
+                if len(block) > per_section:
+                    # Keep header intact, truncate body
+                    lines = block.split("\n", 1)
+                    header = lines[0]
+                    body = lines[1] if len(lines) > 1 else ""
+                    body_limit = per_section - len(header) - 1
+                    truncated.append(header + "\n" + body[:body_limit] + "…" if body_limit > 0 else header)
+                else:
+                    truncated.append(block)
+            listing_description = "\n\n".join(truncated)
+        else:
+            # No sections — just head-truncate as before
+            listing_description = listing_description[:max_desc_chars] + "\n[...]"
 
     user_msg = (
-        f"WG-ANZEIGE BESCHREIBUNG:\n{listing_description}\n\n"
+        f"MIETANZEIGE BESCHREIBUNG:\n{listing_description}\n\n"
         f"Schreibe jetzt den persönlichen Absatz (3–4 Sätze, max. 80 Wörter):"
     )
 

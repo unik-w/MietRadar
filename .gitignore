@@ -14,7 +14,8 @@ data/
 
 # Ignored configs
 config/.env
-config/manual_blacklist.txt
+config/wg_blacklist.txt
+config/immo_blacklist.txt
 config/message.txt
 
 # Legacy / Future features

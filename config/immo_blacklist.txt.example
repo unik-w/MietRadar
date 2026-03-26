@@ -1,0 +1,5 @@
+# Add the expose IDs of IS24 listings you want to blacklist/ignore here (one per line)
+# You can find the ID in the ImmobilienScout24 URL: /expose/XXXXXXX
+# Example: For https://www.immobilienscout24.de/expose/1234567
+# You would simply add: 1234567
+

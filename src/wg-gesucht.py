@@ -110,7 +110,7 @@ while True:
                     blacklist.extend(sent_ids)
                     
             # User's manual text-based blacklist
-            manual_bl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "manual_blacklist.txt")
+            manual_bl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "wg_blacklist.txt")
             if os.path.isfile(manual_bl_path):
                 with open(manual_bl_path, 'r') as manual_file:
                     # Strip out whitespace and ignore commented/empty lines
