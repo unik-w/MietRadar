@@ -80,7 +80,7 @@ miet-radar/
 
 ### 2. Setup (One Command)
 ```bash
-git clone https://github.com/YOUR_USERNAME/miet-radar.git
+git clone https://github.com/unik-w/MietRadar
 cd miet-radar
 bash scripts/setup.sh
 ```
