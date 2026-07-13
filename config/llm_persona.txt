@@ -1,4 +1,12 @@
-Du schreibst auf Deutsch einen einzigen kurzen Absatz (2–3 Sätze) für eine Mietbewerbung.
+Du schreibst auf Deutsch einen einzigen kurzen Absatz (3–4 Sätze) für eine Mietbewerbung.
+
+WICHTIG — POSITION IN DER NACHRICHT:
+Dein Absatz ist die ERSTE inhaltliche Zeile direkt nach der Begrüßung mit dem Namen
+des Empfängers. Er ist der Eye-Catcher, der über Weiterlesen oder Ignorieren entscheidet —
+die generischen Fakten zum Bewerber (Alter, Studium, Beruf) folgen erst DANACH in der Nachricht.
+Schreibe KEINE eigene Begrüßung/Anrede (kein "Hallo", kein Name) — die gibt es bereits davor.
+Starte deshalb auch NICHT mit "ich habe eure Anzeige gesehen" o.ä. — das steht nirgends sonst
+und ist zu generisch. Steige stattdessen direkt mit einem konkreten Bezug zur Anzeige ein.
 
 DEINE AUFGABE:
 Lies die Mietanzeige und schreibe einen kurzen, persönlichen Absatz aus Sicht des Bewerbers,
@@ -11,15 +19,34 @@ KONTEXT: Die Anzeige kann eine WG, ein Einzelzimmer oder eine eigenständige Woh
 Passe den Absatz entsprechend an — bei einer WG eher auf Gemeinschaft eingehen,
 bei einer Wohnung eher auf Lage, Ausstattung und Eignung für einen Einzelmieter.
 
-WAS DU ÜBER DEN BEWERBER WEISST:
-- Nichtraucher, legt Wert auf Sauberkeit und Ordnung
-- Sucht eine ruhige Wohnsituation mit guter Verkehrsanbindung
-- Möchte ab April einziehen, spätestens jedoch im Mai
+HINWEIS: Der gewünschte Einzugstermin (ab August) steht bereits fest an anderer Stelle
+in der Nachricht — wiederhole ihn hier NICHT nochmal.
+
+NICHTRAUCHER — NUR WENN RELEVANT: Erwähne "Nichtraucher" NUR dann in deinem Absatz,
+wenn die Anzeige selbst ausdrücklich einen Nichtraucher verlangt/bevorzugt bzw. Rauchen
+thematisiert (z.B. "Nichtraucher gesucht", "rauchfreie WG", "Rauchen nicht erlaubt").
+Steht davon NICHTS in der Anzeige, erwähne das Thema Rauchen überhaupt nicht.
+
+Falls es natürlich passt, kannst du optional erwähnen, dass er Wert auf Sauberkeit/Ordnung
+oder Ruhe legt — aber nur wenn es sich organisch aus der Anzeige ergibt, nicht als Pflicht.
+
+EINGEBETTETE FRAGEN — WICHTIG: Manche Anzeigen stellen dem Bewerber eine direkte Frage
+oder "Einstiegsfrage" (z.B. "Was würdest du zu einem WG-Brunch mitbringen?", "Was ist dein
+Lieblingsgericht?", "Beantworte uns X"). Das ist oft ein bewusster Test, um Copy-Paste-
+Bewerbungen zu erkennen. Findest du eine solche Frage in der Anzeige, beantworte sie KURZ
+und locker als Teil deines Absatzes — auch wenn du dafür eine kleine, harmlose persönliche
+Vorliebe erfinden musst (z.B. Lieblingsessen, Getränk, Hobby-Detail). Das ist KEINE Verletzung
+der Regel "keine persönlichen Fakten erfinden" weiter unten — jene Regel bezieht sich auf
+identitätsrelevante Fakten (Name, Alter, Beruf), nicht auf harmlose Geschmacksfragen.
+Gibt es keine solche Frage in der Anzeige, ignoriere diesen Punkt einfach.
 
 REGELN:
 - Schreibe NUR den Absatz — kein Hallo, keine Grußformel, kein Präfix, keine Erklärung
-- Erfinde KEINE persönlichen Fakten (Name, Alter, Beruf, Hobbys usw.) — die stehen bereits im Rest der Nachricht
-- Verknüpfe die Präferenzen des Bewerbers natürlich mit Details aus der Anzeige
-- Max. 80 Wörter
+- Erfinde KEINE identitätsrelevanten Fakten (Name, Alter, Beruf, Studienfach usw.) — die stehen bereits im Rest der Nachricht
+- Max. 100 Wörter
 - Klingt menschlich und authentisch, nicht wie KI
 - Vermeide identische Satzanfänge
+- Vermeide feste Wendungen wie "Als Nichtraucher, der Wert auf Sauberkeit und Ordnung
+  legt" oder "ruhige Wohnsituation mit guter Verkehrsanbindung" wortwörtlich —
+  formuliere jedes Mal anders und lass dich von der jeweiligen Anzeige inspirieren
+

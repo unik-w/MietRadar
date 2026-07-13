@@ -109,6 +109,18 @@ def random_sleep(min_s: float = 1.0, max_s: float = 3.0) -> None:
     time.sleep(random.uniform(min_s, max_s))
 
 
+def load_wg_blacklist() -> list[str]:
+    """
+    Read config/wg_blacklist.txt the same way src/wg-gesucht.py does, so this
+    test accurately previews which listings the live bot would actually skip.
+    """
+    bl_path = HERE.parent / "config" / "wg_blacklist.txt"
+    if not bl_path.is_file():
+        return []
+    with open(bl_path, "r") as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+
 def ensure_logged_in(driver) -> None:
     """Navigate to homepage, accept cookies, log in if needed."""
     from selenium.webdriver.common.by import By
@@ -180,16 +192,28 @@ def scrape_listing_urls(driver, search_url: str, max_listings: int) -> list[str]
 
     # wg-gesucht uses h2.truncate_title a for listings
     anchors = driver.find_elements(By.CSS_SELECTOR, "h2.truncate_title a, h3.truncate_title a")
+    blacklist = load_wg_blacklist()
+    skipped = 0
     urls = []
     for a in anchors:
         href = a.get_attribute("href") or ""
-        if (("/wg-zimmer-" in href or "/wohnungen-" in href) and "asset_id" not in href):
-            if href not in urls:
-                urls.append(href)
+        if not (("/wg-zimmer-" in href or "/wohnungen-" in href) and "asset_id" not in href):
+            continue
+        try:
+            item_id = href.split(".")[-2]
+        except Exception:
+            item_id = None
+        if href in blacklist or item_id in blacklist:
+            skipped += 1
+            continue
+        if href not in urls:
+            urls.append(href)
         if len(urls) >= max_listings:
             break
 
     print(f"  Found {len(urls)} matching listing(s) on that page.")
+    if skipped:
+        print(f"  {DIM}Skipped {skipped} blacklisted listing(s).{RESET}")
     return urls
 
 

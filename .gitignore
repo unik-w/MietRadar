@@ -1,6 +1,6 @@
 immobot/
 venv/
-
+.venv/
 # Credentials and secrets - NEVER commit these!
 .env
 
@@ -132,3 +132,4 @@ dmypy.json
 .pyre/
 
 # End of https://www.gitignore.io/api/python
+.DS_Store

@@ -5,15 +5,15 @@ webdriver-manager>=4.0.0
 undetected-chromedriver>=3.5.5
 setuptools>=70.0.0
 
-# ── LLM personalisation (Gemma 3 1B via PyTorch + Apple Metal MPS) ─────────
-# Install with:  pip install torch transformers accelerate
+# ── LLM personalisation (Gemma 3 4B-IT via PyTorch + Apple Metal MPS) ─────────
+# Install with:  pip install torch transformers accelerate protobuf
 #
 # Apple Silicon (M1/M2/M3):
 #   - PyTorch uses the MPS (Metal Performance Shaders) backend automatically
 #   - Set PYTORCH_ENABLE_MPS_FALLBACK=1 if you hit unsupported ops
 #
 # Model: google/gemma-3-4b-it  (~2 GB, downloaded via Hugging Face Hub)
-# Accept the Gemma 3 licence at: https://huggingface.co/google/gemma-3-1b-it
+# Accept the Gemma 3 licence at: https://huggingface.co/google/gemma-3-4b-it
 # Optional: huggingface-cli login  (or set HF_TOKEN in .env)
 #
 # jax-metal is also installed (future use / experimentation):
@@ -21,4 +21,19 @@ setuptools>=70.0.0
 torch>=2.0.0
 transformers>=4.50.0
 accelerate>=0.30.0
+protobuf>=3.20.0
+sentencepiece>=0.1.99
 kagglehub>=0.2.0
+
+# ── LLM personalisation — optional remote API providers ───────────────────────
+# Select the backend via LLM_PROVIDER in config/.env: gemma_local (default),
+# gemini, or openai. Only install what you actually use.
+#
+# Gemini (Developer API key OR Vertex AI project/billing — e.g. free credits):
+#   pip install google-genai
+google-genai>=0.3.0
+#
+# OpenAI (e.g. GPT-5 nano):
+#   pip install openai
+openai>=1.50.0
+

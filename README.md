@@ -1,7 +1,7 @@
 # MietRadar 📡
 ### Automated Apartment & WG Application Bot for Germany — WG-Gesucht + ImmobilienScout24
 
-> **Scan. Apply. Move in.** — An AI-powered Python bot that monitors [WG-Gesucht](https://www.wg-gesucht.de) and [ImmobilienScout24](https://www.immobilienscout24.de), automatically applies to new rental listings, and personalises each application using a local LLM.
+> **Scan. Apply. Move in.** — An AI-powered Python bot that monitors [WG-Gesucht](https://www.wg-gesucht.de) and [ImmobilienScout24](https://www.immobilienscout24.de), automatically applies to new rental listings, and personalises each application using an LLM — either fully local, or via a hosted API (Google Gemini, OpenAI).
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: GPL](https://img.shields.io/badge/license-GPL-green.svg)](LICENSE)
@@ -11,7 +11,7 @@
 
 ## What is MietRadar?
 
-Finding an apartment in Germany — especially in cities like Munich, Berlin, or Hamburg — is brutally competitive. Listings disappear within minutes. **MietRadar** monitors WG-Gesucht and ImmobilienScout24 around the clock, instantly applies to new listings matching your search filters, and optionally uses **Google Gemma 3 4B-IT** (running locally on your machine) to write a personalised paragraph for each application.
+Finding an apartment in Germany — especially in cities like Munich, Berlin, or Hamburg — is brutally competitive. Listings disappear within minutes. **MietRadar** monitors WG-Gesucht and ImmobilienScout24 around the clock, instantly applies to new listings matching your search filters, and optionally uses an LLM to write a personalised paragraph for each application. Choose the backend that fits you: a **local Gemma 3 4B-IT** model (no API costs, runs on your machine), or a hosted API — **Google Gemini** (Developer API key or Vertex AI) or **OpenAI** (e.g. GPT-5 nano).
 
 **Keywords**: Wohnung Bot, WG Bot, apartment bot Germany, Wohnungssuche automatisieren, WG-Gesucht Bot, ImmobilienScout24 Bot, rental application automation, Mietwohnung Bot, automated apartment search Germany, Bewerbung automatisch senden
 
@@ -25,7 +25,7 @@ Finding an apartment in Germany — especially in cities like Munich, Berlin, or
 | 🔄 **Zero-Touch Loop** | Scans search results every N minutes, applies to new listings automatically |
 | 🥷 **Stealth Automation** | Chrome with anti-detection patches, human-like typing & clicking |
 | 🚫 **Smart Blacklisting** | Auto-blocks sent listings, skips sponsored/agency ads, manual override lists |
-| 🧠 **AI Personalisation** | Local Gemma 3 4B-IT generates a unique paragraph per listing (optional) |
+| 🧠 **AI Personalisation** | Multi-provider LLM (local Gemma 3 4B-IT, Google Gemini, or OpenAI) generates a unique paragraph per listing (optional) |
 | 📊 **Reply Tracking** | CSV reports with 🟢/🟡/🔴 status for each application |
 | ⚡ **Shared Pipeline** | Single message template, LLM persona, and helper functions for both platforms |
 
@@ -60,7 +60,7 @@ miet-radar/
 │   ├── immoscout.py                # Main loop — ImmobilienScout24
 │   ├── submit_immo.py              # IS24 browser automation & form submission
 │   ├── check_replies_immo.py       # IS24 reply tracker
-│   └── llm_personalizer.py         # Shared LLM inference (Gemma 3 4B-IT)
+│   └── llm_personalizer.py         # Shared LLM inference (Gemma 3 4B-IT, Gemini, OpenAI)
 ├── tests/                          # Tests (no live sends)
 │   ├── test_llm_personalizer.py    # WG end-to-end test
 │   ├── test_immo.py                # IS24 end-to-end test
@@ -107,6 +107,29 @@ cp config/message.txt.example config/message.txt
 
 3. **LLM Persona** *(Optional)* — Edit `config/llm_persona.txt`:
    Set `USE_LLM_PERSONALIZATION=true` in `.env` to enable. The persona auto-adapts to WG vs. apartment listings.
+
+   Choose the LLM backend via `LLM_PROVIDER` in `.env`:
+   | `LLM_PROVIDER` | Backend | Required `.env` vars |
+   |---|---|---|
+   | `gemma_local` *(default)* | Local Gemma 3 4B-IT (HuggingFace + PyTorch, runs on your machine) | `HF_TOKEN` |
+   | `gemini` | Google Gemini API — Developer API key **or** Vertex AI | `GEMINI_MODEL` + either `GEMINI_API_KEY` **or** (`GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, and `gcloud auth application-default login`) |
+   | `openai` | OpenAI API (e.g. GPT-5 nano) | `OPENAI_MODEL`, `OPENAI_API_KEY` |
+
+   Install the extra SDKs only for the backend(s) you use: `pip install google-genai` (Gemini) and/or `pip install openai` (OpenAI).
+
+   **💸 Free credits tip:** new Google Cloud accounts get **$300 in free credit** (valid ~90 days),
+   usable against Vertex AI usage — not just Gemini. Vertex AI's **Model Garden** also hosts
+   third-party models (e.g. **Anthropic Claude**) and open-source models (Llama, Mistral, and
+   others), so the same credit can be used to experiment with those too, not only Google's own
+   models. To use Vertex AI instead of a plain Gemini API key:
+   1. Install the gcloud CLI: `brew install --cask google-cloud-sdk` (macOS)
+   2. `gcloud auth application-default login` (one-time browser login)
+   3. `gcloud services enable aiplatform.googleapis.com --project=<your-project-id>`
+   4. Set `GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION` in `.env`
+
+   Note: model availability varies by project/region on Vertex AI — if a model 404s, check the
+   [Model Garden](https://console.cloud.google.com/vertex-ai/model-garden) for exact IDs enabled
+   for your project, or try `location=global` for newer preview models.
 
 4. **Blacklists**:
    - `config/wg_blacklist.txt` — paste WG-Gesucht URLs to ignore

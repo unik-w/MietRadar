@@ -12,10 +12,12 @@ Usage:
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 from llm_personalizer import personalise_message
 
 HERE = Path(__file__).parent
-TEMPLATE = (HERE / "message.txt").read_text(encoding="utf-8")
+load_dotenv(HERE.parent / "config" / ".env")
+TEMPLATE = (HERE.parent / "config" / "message.txt").read_text(encoding="utf-8")
 
 # ---------------------------------------------------------------------------
 # Sample listings — representative of real WG-Gesucht descriptions
@@ -65,6 +67,18 @@ SAMPLES = [
             "We are two PhD students working at TUM. "
             "The flat is very clean and tidy. We value privacy and a calm atmosphere. "
             "No smoking anywhere in the flat or building."
+        ),
+    },
+    {
+        "name": "Julia",
+        "url": "https://www.wg-gesucht.de/wg-zimmer-in-Berlin.321.html",
+        "description": (
+            "Wir sind eine bunte WG aus 4 Personen (25-32) in Berlin-Mitte und suchen eine neue Mitbewohnerin oder "
+            "einen neuen Mitbewohner. Die Wohnung liegt direkt am Volkspark Friedrichshain, 3 Minuten zur U5. "
+            "Das freie Zimmer ist 16qm mit großem Fenster und wird unmöbliert übergeben. "
+            "Wir sind alle Berufstätige in Kreativ- und Techbranchen. "
+            "Gelegentlich kochen wir zusammen, ansonsten lebt jeder sein eigenes Leben. "
+            "Haustiere leider nicht möglich. Einzug ab 01.08."
         ),
     },
 ]
