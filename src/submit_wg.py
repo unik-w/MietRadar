@@ -17,12 +17,19 @@ env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "confi
 load_dotenv(dotenv_path=env_path)
 
 # ── LLM personalisation (optional) ─────────────────────────────────────────
-# Set USE_LLM_PERSONALIZATION=true in .env to enable Gemma-based personalisation.
+# Set USE_LLM_PERSONALIZATION=true in .env to enable LLM-based personalisation.
+# Backend is chosen via LLM_PROVIDER (gemma_local / gemini / openai) — see llm_personalizer.py.
 _USE_LLM = os.getenv("USE_LLM_PERSONALIZATION", "false").lower() in ("1", "true", "yes")
 if _USE_LLM:
     try:
         from llm_personalizer import personalise_message as _llm_personalise
-        print("🧠 LLM personalisation ENABLED (Gemma 3 4B-IT)")
+        _llm_provider = os.getenv("LLM_PROVIDER", "gemma_local").strip().lower()
+        _llm_model = {
+            "gemma_local": "Gemma 3 4B-IT",
+            "gemini": os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            "openai": os.getenv("OPENAI_MODEL", "gpt-5-nano"),
+        }.get(_llm_provider, _llm_provider)
+        print(f"🧠 LLM personalisation ENABLED ({_llm_model} via {_llm_provider})")
     except ImportError as _e:
         print(f"⚠️  LLM personalisation disabled — import error: {_e}")
         _USE_LLM = False
@@ -384,9 +391,9 @@ def submit_app(driver, ref):
         with open(message_path, "r", encoding="utf-8") as f:
             template = f.read()
 
-        # ── Optionally personalise with Gemma LLM ──────────────────────────
+        # ── Optionally personalise with the configured LLM ─────────────────
         if _USE_LLM:
-            print("  🧠 Personalising message with Gemma 3 4B-IT…")
+            print(f"  🧠 Personalising message with {_llm_model}…")
             
             # We are currently on the 'nachricht-senden' page.
             # To get the description, we must briefly load the actual listing page.

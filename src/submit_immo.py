@@ -37,6 +37,7 @@ from submit_wg import random_sleep, human_type, human_move_and_click, wait_for
 
 _USE_LLM = getattr(_submit_wg_mod, '_USE_LLM', False)
 _llm_personalise = getattr(_submit_wg_mod, '_llm_personalise', None)
+_llm_model = getattr(_submit_wg_mod, '_llm_model', 'the configured LLM')
 
 IMMO_EMAIL = os.getenv("IMMO_EMAIL")
 IMMO_PASSWORD = os.getenv("IMMO_PASSWORD")
@@ -459,7 +460,7 @@ def submit_app(driver, expose_id):
         llm_future = None
 
         if _USE_LLM and description.strip():
-            print("  🧠 Personalising message with Gemma 3 4B-IT (background)…")
+            print(f"  🧠 Personalising message with {_llm_model} (background)…")
             executor = ThreadPoolExecutor(max_workers=1)
             llm_future = executor.submit(
                 _llm_personalise,
