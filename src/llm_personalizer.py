@@ -27,6 +27,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 from pathlib import Path
 
 # Enable MPS fallback for any ops not yet implemented in Apple Metal.
@@ -386,19 +387,37 @@ def _generate_personalisation_para(
     )
     system_prompt = _get_system_prompt()
 
+    max_retries = 4
+    result = ""
     try:
-        if provider == "gemini":
-            result = _generate_via_gemini(system_prompt, user_msg, max_new_tokens)
-        elif provider == "openai":
-            result = _generate_via_openai(system_prompt, user_msg, max_new_tokens)
-        elif provider == "gemma_local":
-            result = _generate_via_gemma_local(system_prompt, user_msg, max_new_tokens)
-        else:
-            logger.error(
-                f"Unknown LLM_PROVIDER={provider!r}. "
-                "Expected one of: gemma_local, gemini, openai."
-            )
-            return None
+        for attempt in range(max_retries):
+            try:
+                if provider == "gemini":
+                    result = _generate_via_gemini(system_prompt, user_msg, max_new_tokens)
+                elif provider == "openai":
+                    result = _generate_via_openai(system_prompt, user_msg, max_new_tokens)
+                elif provider == "gemma_local":
+                    result = _generate_via_gemma_local(system_prompt, user_msg, max_new_tokens)
+                else:
+                    logger.error(
+                        f"Unknown LLM_PROVIDER={provider!r}. "
+                        "Expected one of: gemma_local, gemini, openai."
+                    )
+                    return None
+                break  # success
+            except Exception as e:
+                is_rate_limit = any(
+                    marker in str(e) for marker in ("429", "RESOURCE_EXHAUSTED", "rate_limit", "RateLimit")
+                )
+                if is_rate_limit and attempt < max_retries - 1:
+                    wait_s = 2 ** (attempt + 1)  # 2s, 4s, 8s
+                    logger.warning(
+                        f"Rate limited by {provider} (attempt {attempt + 1}/{max_retries}) — "
+                        f"retrying in {wait_s}s…"
+                    )
+                    time.sleep(wait_s)
+                    continue
+                raise
 
         # Strip any accidental markdown fences
         if result.startswith("```"):

@@ -20,6 +20,35 @@ CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_SECONDS", "600"))
 fname = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "wg_offer.json")
 
 
+def click_next_page(driver):
+    """
+    Click the real "next page" (>) arrow in the results pagination widget.
+
+    IMPORTANT: Navigating directly to a page-N URL via driver.get() does NOT
+    work — WG-Gesucht's server redirects any such direct/full-navigation
+    request back to the canonical page-1 URL (confirmed by testing: the
+    resulting driver.current_url always lands back on "...1.0.html" even
+    though the address bar shows "...1.1.html"). The only reliable way to
+    reach subsequent pages is to click the actual in-page pagination link,
+    which carries the correct Referer/session context.
+
+    Returns True if a next-page link was found and clicked, False otherwise
+    (i.e. we're on the last page).
+    """
+    try:
+        candidates = driver.find_elements(By.CSS_SELECTOR, "#main_column a.black_text_link.mr5")
+        next_link = next((l for l in candidates if l.text.strip() == ">"), None)
+        if next_link is None:
+            return False
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_link)
+        submit_wg.random_sleep(0.3, 0.8)
+        driver.execute_script("arguments[0].click();", next_link)
+        submit_wg.random_sleep(2, 4)
+        return True
+    except Exception:
+        return False
+
+
 def scrape_site(driver=None):
     close_driver = False
     if driver is None:
@@ -44,9 +73,14 @@ def scrape_site(driver=None):
     
     print(f"\n🔍 Scraping up to {pages_to_scrape} pages of WG-Gesucht...")
     
-    for page in range(pages_to_scrape):
-        print(f"  -> Scanning Page {page+1}...")
+    for page in range(1, pages_to_scrape + 1):
+        print(f"  -> Scanning Page {page}...")
+
         cards = driver.find_elements(By.CSS_SELECTOR, '.wgg_card')
+        if not cards:
+            print("  -> No listings found on this page, stopping.")
+            break
+
         for card in cards:
             try:
                 card_text = card.text.lower()
@@ -60,17 +94,11 @@ def scrape_site(driver=None):
                         links.add(link_rel)
             except Exception:
                 pass
-        
-        # Try to click the "Next" (Weiter) pagination button
-        try:
-            # wg-gesucht uses #assets_list_pagination internally
-            next_btn = driver.find_element(By.CSS_SELECTOR, "#assets_list_pagination a.next")
-            # JavaScript click is more resilient if the button is off-screen
-            driver.execute_script("arguments[0].click();", next_btn)
-            submit_wg.random_sleep(2, 4)
-        except Exception:
-            print("  -> Reached last page or couldn't find Next button.")
-            break
+
+        if page < pages_to_scrape:
+            if not click_next_page(driver):
+                print("  -> Reached last page or couldn't find Next button.")
+                break
 
     data = list(links)
     

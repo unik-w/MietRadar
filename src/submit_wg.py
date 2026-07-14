@@ -54,14 +54,27 @@ def random_sleep(min_s=1.0, max_s=3.0):
     time.sleep(random.uniform(min_s, max_s))
 
 
-def human_type(element, text):
+def human_type(element, text, target_seconds=None):
     """
     Type text character-by-character with randomised delays,
     just like a real human would.
+
+    If `target_seconds` is given, the per-character delay is paced so the
+    whole string takes roughly that long to type (with jitter so it doesn't
+    look perfectly uniform) instead of the default 0.04-0.18s/char, which
+    would take minutes on long messages.
     """
-    for char in text:
-        element.send_keys(char)
-        time.sleep(random.uniform(0.04, 0.18))
+    if not text:
+        return
+    if target_seconds is not None:
+        per_char = target_seconds / len(text)
+        for char in text:
+            element.send_keys(char)
+            time.sleep(max(0.005, random.uniform(0.7, 1.3) * per_char))
+    else:
+        for char in text:
+            element.send_keys(char)
+            time.sleep(random.uniform(0.04, 0.18))
 
 
 def human_move_and_click(driver, element):
@@ -400,7 +413,25 @@ def submit_app(driver, ref):
             current_msg_url = driver.current_url
             driver.get("https://www.wg-gesucht.de/" + slug)
             random_sleep(1, 2)
-            
+            solve_captcha_if_present(driver)
+
+            # WG-Gesucht sometimes shows a standalone "Überprüfung" reCAPTCHA
+            # page instead of the listing (seen when navigating too fast).
+            # solve_captcha_if_present() only handles the iframe widget itself,
+            # so also detect the wrapper page and wait for it to clear before
+            # giving up on the description (a silently empty description means
+            # no LLM personalisation and just the bare template gets sent).
+            if "warum erscheint diese seite" in driver.page_source.lower():
+                print("  ⚠️  Verification/CAPTCHA page shown instead of listing — waiting for it to clear…")
+                deadline = time.time() + CAPTCHA_WAIT_SECONDS
+                while time.time() < deadline and "warum erscheint diese seite" in driver.page_source.lower():
+                    time.sleep(2)
+                if "warum erscheint diese seite" in driver.page_source.lower():
+                    print("  ⚠️  Still on verification page — retrying listing page load once…")
+                    driver.get("https://www.wg-gesucht.de/" + slug)
+                    random_sleep(1, 2)
+                    solve_captcha_if_present(driver)
+
             description = ""
             full_desc = []
             import re
@@ -422,7 +453,10 @@ def submit_app(driver, ref):
                     description = desc_el.text.strip()
                 except NoSuchElementException:
                     pass
-                
+
+            if not description.strip():
+                print("  ⚠️  Could not extract listing description — message will fall back to the plain template (no LLM paragraph).")
+
             # Return to the message page
             driver.get(current_msg_url)
             random_sleep(1, 2)
@@ -440,14 +474,11 @@ def submit_app(driver, ref):
                 message = template.replace(" {name}", "").replace("{name}", "")
 
         print(f"  📝 Addressing message to: {poster_name or '(unknown name)'}")
-        # Use JS to set the value instantly (avoids 2+ min character-by-character typing)
-        driver.execute_script(
-            "arguments[0].value = arguments[1]; "
-            "arguments[0].dispatchEvent(new Event('input', {bubbles:true})); "
-            "arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
-            text_area, message
-        )
-        random_sleep(2, 3)
+        # Type it out like a human would, but paced to take ~25s regardless of
+        # message length (a fixed per-char delay would take 2+ minutes on long
+        # messages, which is unnecessarily slow).
+        human_type(text_area, message, target_seconds=25)
+        random_sleep(1, 2)
 
         # ── 8. Click send ────────────────────────────────────────────────────
         # Button text is 'Senden' on wg-gesucht (not 'Nachricht senden')
